@@ -1,0 +1,20 @@
+{
+  "name": "backend-setup",
+  "version": "1.0.0",
+  "description": "professional backend setup",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "javascript",
+    "backend",
+    "chai"
+  ],
+  "author": "alaminh63",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}
