@@ -1,16 +1,40 @@
+// import dotenv from "dotenv";
+// import connectDB from "./db/db.js";
+// import { app } from "./app.js";
+// dotenv.config({
+//   path: "./env",
+// });
+
+// connectDB()
+//   .then(() => {
+//     app.listen(process.env.PORT || 8000),
+//       () => {
+//         console.log(`Server is running on port : ${process.env.PORT}`);
+//       };
+//     app.on("error", (err) => {
+//       console.log("ERR:", err);
+//       throw err;
+//     });
+//   })
+//   .catch((err) => {
+//     console.log("MongoDB Connection Failed !!!", err);
+//   });
+
 import dotenv from "dotenv";
 import connectDB from "./db/db.js";
 import { app } from "./app.js";
+
 dotenv.config({
   path: "./env",
 });
 
 connectDB()
   .then(() => {
-    app.listen(process.env.PORT || 8000),
-      () => {
-        console.log(`Server is running on port : ${process.env.PORT}`);
-      };
+    const port = process.env.PORT || 8000;
+    app.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+    });
+
     app.on("error", (err) => {
       console.log("ERR:", err);
       throw err;
@@ -19,6 +43,7 @@ connectDB()
   .catch((err) => {
     console.log("MongoDB Connection Failed !!!", err);
   });
+
 /*
 import express from "express";
 const app = express();
