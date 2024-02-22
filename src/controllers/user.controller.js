@@ -3,17 +3,26 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/users.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
+
+    if (!user) {
+      console.error(`User not found with ID: ${userId}`);
+      throw new ApiError(404, "User not found");
+    }
+
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+
     return { accessToken, refreshToken };
   } catch (error) {
+    console.error(`Error generating tokens: ${error.message}`);
     throw new ApiError(
       500,
       "Something went wrong while generating Access and Refresh Tokens"
@@ -81,8 +90,8 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, userName } = req.body;
-  if (!(email || userName)) {
+  const { email, userName, password } = req.body; // Add 'password' here
+  if (!email && !userName) {
     throw new ApiError(400, "Email Or UserName must need for login");
   }
   const user = await User.findOne({
@@ -93,7 +102,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User doesn't exist");
   }
 
-  const isPasswordValid = await user.isPasswordCorrect(password);
+  const isPasswordValid = await user.isPasswordCorrect(password); // Now 'password' is defined
   if (!isPasswordValid) {
     throw new ApiError(404, "Password Incorrect");
   }
@@ -128,7 +137,16 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
-const logOut = asyncHandler(async (req, res) => {
+const logout = asyncHandler(async (req, res) => {
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  // Assuming you stored tokens in cookies
+  const accessToken = req.cookies.accessToken;
+  const refreshToken = req.cookies.refreshToken;
+
   User.findByIdAndUpdate(
     req.user._id,
     {
@@ -140,15 +158,28 @@ const logOut = asyncHandler(async (req, res) => {
       new: true,
     }
   );
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
+
   return res
     .status(200)
-    .clearCookie("accessToken", accessToken, options)
-    .clearCookie("refreshToken", refreshToken, options)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User Logged out successfully"));
 });
 
-export { registerUser, loginUser, logOut };
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(404, "Unauthorized Request");
+  }
+
+
+  jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  )
+
+});
+
+export { registerUser, loginUser, logout };
